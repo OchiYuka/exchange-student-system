@@ -97,7 +97,12 @@ const authenticateToken = (req, res, next) => {
 };
 
 // ヘルスチェックエンドポイント
-app.get('/api/health', (req, res) => {
+app.get('/health', (req, res) => {
+  res.json({ message: 'Exchange Student System API is running' });
+});
+
+// ルートエンドポイント
+app.get('/', (req, res) => {
   res.json({ message: 'Exchange Student System API is running' });
 });
 

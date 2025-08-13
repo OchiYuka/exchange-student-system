@@ -6,9 +6,9 @@ import App from './App';
 
 // 環境に応じてaxiosのベースURL設定
 if (process.env.NODE_ENV === 'production') {
-  axios.defaults.baseURL = '';
+  axios.defaults.baseURL = '/api';
 } else {
-  axios.defaults.baseURL = 'http://localhost:5000';
+  axios.defaults.baseURL = 'http://localhost:5000/api';
 }
 
 const root = ReactDOM.createRoot(document.getElementById('root'));

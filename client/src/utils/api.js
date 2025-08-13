@@ -4,10 +4,10 @@ import axios from 'axios';
 const getApiBaseUrl = () => {
   if (process.env.NODE_ENV === 'production') {
     // Vercelデプロイ時は同じドメインのAPIを使用
-    return '';
+    return '/api';
   }
   // 開発時はローカルサーバーを使用
-  return 'http://localhost:5000';
+  return 'http://localhost:5000/api';
 };
 
 // Axiosインスタンスを作成
