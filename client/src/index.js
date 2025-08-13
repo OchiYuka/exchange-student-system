@@ -4,8 +4,12 @@ import axios from 'axios';
 import './index.css';
 import App from './App';
 
-// axiosのベースURL設定
-axios.defaults.baseURL = 'http://localhost:5000';
+// 環境に応じてaxiosのベースURL設定
+if (process.env.NODE_ENV === 'production') {
+  axios.defaults.baseURL = '';
+} else {
+  axios.defaults.baseURL = 'http://localhost:5000';
+}
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
