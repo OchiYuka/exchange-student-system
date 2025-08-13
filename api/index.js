@@ -11,54 +11,70 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+// グローバルデータベースインスタンス（Vercelでは関数ごとにリセットされるため、メモリベースを使用）
+let db = null;
+
 // データベース初期化
 const initDatabase = () => {
   return new Promise((resolve, reject) => {
-    const db = new sqlite3.Database(':memory:'); // VercelではファイルベースのDBは使えないので、メモリベースを使用
-    
-    db.serialize(() => {
-      // ユーザーテーブル
-      db.run(`CREATE TABLE IF NOT EXISTS users (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        username TEXT UNIQUE NOT NULL,
-        email TEXT UNIQUE NOT NULL,
-        password TEXT NOT NULL,
-        role TEXT NOT NULL DEFAULT 'student',
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-      )`);
+    if (db) {
+      resolve(db);
+      return;
+    }
 
-      // 活動報告テーブル
-      db.run(`CREATE TABLE IF NOT EXISTS activity_reports (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        user_id INTEGER NOT NULL,
-        title TEXT NOT NULL,
-        description TEXT NOT NULL,
-        date TEXT NOT NULL,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (user_id) REFERENCES users (id)
-      )`);
+    db = new sqlite3.Database(':memory:', (err) => {
+      if (err) {
+        reject(err);
+        return;
+      }
 
-      // 在学証明書テーブル
-      db.run(`CREATE TABLE IF NOT EXISTS enrollment_certificates (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        user_id INTEGER NOT NULL,
-        student_name TEXT NOT NULL,
-        student_id TEXT NOT NULL,
-        program TEXT NOT NULL,
-        start_date TEXT NOT NULL,
-        end_date TEXT NOT NULL,
-        status TEXT DEFAULT 'pending',
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (user_id) REFERENCES users (id)
-      )`);
+      db.serialize(() => {
+        // ユーザーテーブル
+        db.run(`CREATE TABLE IF NOT EXISTS users (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          username TEXT UNIQUE NOT NULL,
+          email TEXT UNIQUE NOT NULL,
+          password TEXT NOT NULL,
+          role TEXT NOT NULL DEFAULT 'student',
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        )`);
 
-      // デフォルト管理者アカウントを作成
-      const adminPassword = bcrypt.hashSync('admin123', 10);
-      db.run(`INSERT OR IGNORE INTO users (username, email, password, role) VALUES (?, ?, ?, ?)`,
-        ['admin', 'admin@example.com', adminPassword, 'admin']);
+        // 活動報告テーブル
+        db.run(`CREATE TABLE IF NOT EXISTS activity_reports (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          user_id INTEGER NOT NULL,
+          title TEXT NOT NULL,
+          description TEXT NOT NULL,
+          date TEXT NOT NULL,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          FOREIGN KEY (user_id) REFERENCES users (id)
+        )`);
+
+        // 在学証明書テーブル
+        db.run(`CREATE TABLE IF NOT EXISTS enrollment_certificates (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          user_id INTEGER NOT NULL,
+          student_name TEXT NOT NULL,
+          student_id TEXT NOT NULL,
+          program TEXT NOT NULL,
+          start_date TEXT NOT NULL,
+          end_date TEXT NOT NULL,
+          status TEXT DEFAULT 'pending',
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          FOREIGN KEY (user_id) REFERENCES users (id)
+        )`);
+
+        // デフォルト管理者アカウントを作成
+        const adminPassword = bcrypt.hashSync('admin123', 10);
+        db.run(`INSERT OR IGNORE INTO users (username, email, password, role) VALUES (?, ?, ?, ?)`,
+          ['admin', 'admin@example.com', adminPassword, 'admin'], (err) => {
+            if (err) {
+              console.error('Admin creation error:', err);
+            }
+            resolve(db);
+          });
+      });
     });
-
-    resolve(db);
   });
 };
 
@@ -80,7 +96,7 @@ const authenticateToken = (req, res, next) => {
   });
 };
 
-// ルート
+// ヘルスチェックエンドポイント
 app.get('/api/health', (req, res) => {
   res.json({ message: 'Exchange Student System API is running' });
 });
@@ -97,11 +113,11 @@ app.post('/api/register', [
   }
 
   try {
-    const db = await initDatabase();
+    const database = await initDatabase();
     const { username, email, password } = req.body;
     const hashedPassword = bcrypt.hashSync(password, 10);
 
-    db.run(`INSERT INTO users (username, email, password) VALUES (?, ?, ?)`,
+    database.run(`INSERT INTO users (username, email, password) VALUES (?, ?, ?)`,
       [username, email, hashedPassword],
       function(err) {
         if (err) {
@@ -115,6 +131,7 @@ app.post('/api/register', [
         res.json({ token, user: { id: this.lastID, username, email, role: 'student' } });
       });
   } catch (error) {
+    console.error('Registration error:', error);
     res.status(500).json({ error: 'サーバーエラーが発生しました' });
   }
 });
@@ -122,11 +139,12 @@ app.post('/api/register', [
 // ログイン
 app.post('/api/login', async (req, res) => {
   try {
-    const db = await initDatabase();
+    const database = await initDatabase();
     const { username, password } = req.body;
 
-    db.get(`SELECT * FROM users WHERE username = ?`, [username], (err, user) => {
+    database.get(`SELECT * FROM users WHERE username = ?`, [username], (err, user) => {
       if (err) {
+        console.error('Login error:', err);
         return res.status(500).json({ error: 'ログインに失敗しました' });
       }
 
@@ -138,6 +156,7 @@ app.post('/api/login', async (req, res) => {
       res.json({ token, user: { id: user.id, username: user.username, email: user.email, role: user.role } });
     });
   } catch (error) {
+    console.error('Login error:', error);
     res.status(500).json({ error: 'サーバーエラーが発生しました' });
   }
 });
@@ -154,20 +173,22 @@ app.post('/api/activity-reports', authenticateToken, [
   }
 
   try {
-    const db = await initDatabase();
+    const database = await initDatabase();
     const { title, description, date } = req.body;
     const userId = req.user.id;
 
-    db.run(`INSERT INTO activity_reports (user_id, title, description, date) VALUES (?, ?, ?, ?)`,
+    database.run(`INSERT INTO activity_reports (user_id, title, description, date) VALUES (?, ?, ?, ?)`,
       [userId, title, description, date],
       function(err) {
         if (err) {
+          console.error('Activity report creation error:', err);
           return res.status(500).json({ error: '活動報告の作成に失敗しました' });
         }
 
         res.json({ id: this.lastID, title, description, date, user_id: userId });
       });
   } catch (error) {
+    console.error('Activity report error:', error);
     res.status(500).json({ error: 'サーバーエラーが発生しました' });
   }
 });
@@ -175,7 +196,7 @@ app.post('/api/activity-reports', authenticateToken, [
 // 活動報告の取得
 app.get('/api/activity-reports', authenticateToken, async (req, res) => {
   try {
-    const db = await initDatabase();
+    const database = await initDatabase();
     const userId = req.user.id;
     const isAdmin = req.user.role === 'admin';
 
@@ -185,13 +206,15 @@ app.get('/api/activity-reports', authenticateToken, async (req, res) => {
 
     const params = isAdmin ? [] : [userId];
 
-    db.all(query, params, (err, reports) => {
+    database.all(query, params, (err, reports) => {
       if (err) {
+        console.error('Activity reports fetch error:', err);
         return res.status(500).json({ error: '活動報告の取得に失敗しました' });
       }
       res.json(reports);
     });
   } catch (error) {
+    console.error('Activity reports error:', error);
     res.status(500).json({ error: 'サーバーエラーが発生しました' });
   }
 });
@@ -210,14 +233,15 @@ app.post('/api/enrollment-certificates', authenticateToken, [
   }
 
   try {
-    const db = await initDatabase();
+    const database = await initDatabase();
     const { student_name, student_id, program, start_date, end_date } = req.body;
     const userId = req.user.id;
 
-    db.run(`INSERT INTO enrollment_certificates (user_id, student_name, student_id, program, start_date, end_date) VALUES (?, ?, ?, ?, ?, ?)`,
+    database.run(`INSERT INTO enrollment_certificates (user_id, student_name, student_id, program, start_date, end_date) VALUES (?, ?, ?, ?, ?, ?)`,
       [userId, student_name, student_id, program, start_date, end_date],
       function(err) {
         if (err) {
+          console.error('Enrollment certificate creation error:', err);
           return res.status(500).json({ error: '在学証明書の作成に失敗しました' });
         }
 
@@ -233,6 +257,7 @@ app.post('/api/enrollment-certificates', authenticateToken, [
         });
       });
   } catch (error) {
+    console.error('Enrollment certificate error:', error);
     res.status(500).json({ error: 'サーバーエラーが発生しました' });
   }
 });
@@ -240,7 +265,7 @@ app.post('/api/enrollment-certificates', authenticateToken, [
 // 在学証明書の取得
 app.get('/api/enrollment-certificates', authenticateToken, async (req, res) => {
   try {
-    const db = await initDatabase();
+    const database = await initDatabase();
     const userId = req.user.id;
     const isAdmin = req.user.role === 'admin';
 
@@ -250,13 +275,15 @@ app.get('/api/enrollment-certificates', authenticateToken, async (req, res) => {
 
     const params = isAdmin ? [] : [userId];
 
-    db.all(query, params, (err, certificates) => {
+    database.all(query, params, (err, certificates) => {
       if (err) {
+        console.error('Enrollment certificates fetch error:', err);
         return res.status(500).json({ error: '在学証明書の取得に失敗しました' });
       }
       res.json(certificates);
     });
   } catch (error) {
+    console.error('Enrollment certificates error:', error);
     res.status(500).json({ error: 'サーバーエラーが発生しました' });
   }
 });
@@ -268,7 +295,7 @@ app.put('/api/enrollment-certificates/:id/status', authenticateToken, async (req
   }
 
   try {
-    const db = await initDatabase();
+    const database = await initDatabase();
     const { id } = req.params;
     const { status } = req.body;
 
@@ -276,8 +303,9 @@ app.put('/api/enrollment-certificates/:id/status', authenticateToken, async (req
       return res.status(400).json({ error: '無効なステータスです' });
     }
 
-    db.run(`UPDATE enrollment_certificates SET status = ? WHERE id = ?`, [status, id], function(err) {
+    database.run(`UPDATE enrollment_certificates SET status = ? WHERE id = ?`, [status, id], function(err) {
       if (err) {
+        console.error('Status update error:', err);
         return res.status(500).json({ error: 'ステータスの更新に失敗しました' });
       }
 
@@ -288,6 +316,7 @@ app.put('/api/enrollment-certificates/:id/status', authenticateToken, async (req
       res.json({ message: 'ステータスが更新されました' });
     });
   } catch (error) {
+    console.error('Status update error:', error);
     res.status(500).json({ error: 'サーバーエラーが発生しました' });
   }
 });
@@ -295,11 +324,12 @@ app.put('/api/enrollment-certificates/:id/status', authenticateToken, async (req
 // ユーザー情報の取得
 app.get('/api/profile', authenticateToken, async (req, res) => {
   try {
-    const db = await initDatabase();
+    const database = await initDatabase();
     const userId = req.user.id;
 
-    db.get(`SELECT id, username, email, role, created_at FROM users WHERE id = ?`, [userId], (err, user) => {
+    database.get(`SELECT id, username, email, role, created_at FROM users WHERE id = ?`, [userId], (err, user) => {
       if (err) {
+        console.error('Profile fetch error:', err);
         return res.status(500).json({ error: 'ユーザー情報の取得に失敗しました' });
       }
 
@@ -310,8 +340,15 @@ app.get('/api/profile', authenticateToken, async (req, res) => {
       res.json(user);
     });
   } catch (error) {
+    console.error('Profile error:', error);
     res.status(500).json({ error: 'サーバーエラーが発生しました' });
   }
+});
+
+// エラーハンドリング
+app.use((error, req, res, next) => {
+  console.error('Unhandled error:', error);
+  res.status(500).json({ error: 'サーバーエラーが発生しました' });
 });
 
 module.exports = app;

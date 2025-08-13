@@ -1,83 +1,85 @@
 # 交換留学生システム (Exchange Student System)
 
-このシステムは、交換留学生の活動報告と在学証明書の管理を行うWebアプリケーションです。
+交換留学生向けの在籍証明書と活動報告書を提出するWebアプリケーションです。
 
 ## 機能
 
-- 学生・管理者のログイン/登録
-- 活動報告の作成・管理
-- 在学証明書の申請・管理
-- 管理者ダッシュボード
-- 学生ダッシュボード
+### 学生機能
+- ユーザー登録・ログイン
+- 活動報告書の提出・管理
+- 在籍証明書の申請・確認
+- 個人情報の管理
+
+### 管理者機能
+- 学生の活動報告書の確認・承認
+- 在籍証明書の承認・発行
+- システム全体の管理
 
 ## 技術スタック
 
-- **フロントエンド**: React, Tailwind CSS, Axios
-- **バックエンド**: Node.js, Express, SQLite
-- **認証**: JWT
-- **デプロイ**: Vercel
+### フロントエンド
+- React 18
+- Tailwind CSS
+- React Router
+- Axios
+- React Hook Form
+- Lucide React (アイコン)
 
-## ローカル開発
+### バックエンド
+- Node.js
+- Express.js
+- SQLite3 (メモリベース)
+- JWT認証
+- bcryptjs (パスワードハッシュ化)
 
-### 前提条件
+### デプロイ
+- Vercel (フロントエンド + バックエンド)
 
-- Node.js (v14以上)
-- npm
+## セットアップ
 
-### インストール
+### ローカル開発
 
+1. リポジトリをクローン
 ```bash
-# 依存関係をインストール
+git clone <repository-url>
+cd exchange-student-system
+```
+
+2. 依存関係をインストール
+```bash
 npm run install-all
 ```
 
-### 開発サーバーの起動
-
+3. 開発サーバーを起動
 ```bash
-# フロントエンドとバックエンドを同時に起動
 npm run dev
 ```
 
-- フロントエンド: http://localhost:3000
-- バックエンド: http://localhost:5000
+### Vercelでのデプロイ
 
-## Vercelデプロイ
-
-### 1. GitHubリポジトリの作成
-
-1. GitHubで新しいリポジトリを作成
-2. ローカルリポジトリを初期化してプッシュ
-
+1. GitHubにリポジトリをプッシュ
 ```bash
-git init
 git add .
 git commit -m "Initial commit"
-git branch -M main
-git remote add origin https://github.com/your-username/your-repo-name.git
-git push -u origin main
+git push origin main
 ```
 
-### 2. Vercelでのデプロイ
+2. Vercelでプロジェクトをインポート
+   - Vercelダッシュボードにアクセス
+   - "New Project"をクリック
+   - GitHubリポジトリを選択
+   - 自動的に設定が適用される
 
-1. [Vercel](https://vercel.com)にアクセス
-2. GitHubアカウントでログイン
-3. "New Project"をクリック
-4. GitHubリポジトリを選択
-5. 以下の設定でデプロイ:
-   - Framework Preset: Other
-   - Build Command: `cd client && npm run build`
-   - Output Directory: `client/build`
-   - Install Command: `npm run install-all`
+3. 環境変数の設定（必要に応じて）
+   - Vercelダッシュボードでプロジェクト設定
+   - "Environment Variables"で設定
 
-### 3. 環境変数の設定
+## 使用方法
 
-Vercelのプロジェクト設定で以下の環境変数を設定:
-
-```
-JWT_SECRET=your-secret-key
-```
-
-## デフォルトアカウント
+### 学生アカウント
+1. アプリケーションにアクセス
+2. "新規登録"でアカウントを作成
+3. ログイン後、活動報告書や在籍証明書を申請
 
 ### 管理者アカウント
 - ユーザー名: `admin`
@@ -88,23 +90,41 @@ JWT_SECRET=your-secret-key
 ### 認証
 - `POST /api/register` - ユーザー登録
 - `POST /api/login` - ログイン
+
+### 活動報告書
+- `GET /api/activity-reports` - 報告書一覧取得
+- `POST /api/activity-reports` - 報告書作成
+
+### 在籍証明書
+- `GET /api/enrollment-certificates` - 証明書一覧取得
+- `POST /api/enrollment-certificates` - 証明書申請
+- `PUT /api/enrollment-certificates/:id/status` - ステータス更新（管理者）
+
+### プロフィール
 - `GET /api/profile` - ユーザー情報取得
-
-### 活動報告
-- `POST /api/activity-reports` - 活動報告作成
-- `GET /api/activity-reports` - 活動報告取得
-
-### 在学証明書
-- `POST /api/enrollment-certificates` - 在学証明書申請
-- `GET /api/enrollment-certificates` - 在学証明書取得
-- `PUT /api/enrollment-certificates/:id/status` - ステータス更新（管理者のみ）
 
 ## 注意事項
 
-- VercelではSQLiteのファイルベースデータベースは使用できないため、メモリベースのデータベースを使用しています
-- データは永続化されません（デプロイごとにリセット）
-- 本格的な運用では、PostgreSQLやMongoDBなどの外部データベースの使用を推奨します
+- Vercelではファイルベースのデータベースが使用できないため、メモリベースのSQLiteを使用しています
+- データはリクエストごとにリセットされます（本番環境では永続的なデータベースの使用を推奨）
+- ファイルアップロード機能はVercelでは利用できません
+
+## トラブルシューティング
+
+### Vercelデプロイエラー
+1. `vercel.json`の設定を確認
+2. ビルドログでエラーの詳細を確認
+3. 環境変数が正しく設定されているか確認
+
+### ローカル開発エラー
+1. 依存関係が正しくインストールされているか確認
+2. ポート5000が使用可能か確認
+3. Node.jsのバージョンが適切か確認
 
 ## ライセンス
 
-MIT License 
+MIT License
+
+## 貢献
+
+プルリクエストやイシューの報告を歓迎します。 
