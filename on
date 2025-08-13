@@ -1,0 +1,5 @@
+[33m2448419[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmaster[m[33m, [m[1;31morigin/master[m[33m, [m[1;31morigin/HEAD[m[33m)[m Optimize Vercel deployment configuration
+[33m3670874[m Fix Vercel deployment issues and improve error handling
+[33m8387066[m Initial commit: Exchange student system
+[33mc378988[m Fix Vercel routing: redirect all routes to index.html for React Router
+[33madff8bc[m Fix ESLint error: add eslint-disable comment for unused isAdmin variable
