@@ -7,7 +7,7 @@ function App() {
   const [certificates, setCertificates] = useState([]);
   const [showReportForm, setShowReportForm] = useState(false);
   const [showCertificateForm, setShowCertificateForm] = useState(false);
-  const [isAdmin, setIsAdmin] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false); // eslint-disable-line no-unused-vars
 
   // 学生の提出機能を改善
   const submitReport = (reportData) => {
