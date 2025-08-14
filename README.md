@@ -28,12 +28,13 @@
 ### バックエンド
 - Node.js
 - Express.js
-- SQLite3 (メモリベース)
+- Vercel Postgres (本番環境)
 - JWT認証
 - bcryptjs (パスワードハッシュ化)
 
 ### デプロイ
 - Vercel (フロントエンド + バックエンド)
+- Vercel Postgres (データベース)
 
 ## セットアップ
 
@@ -50,7 +51,14 @@ cd exchange-student-system
 npm run install-all
 ```
 
-3. 開発サーバーを起動
+3. 環境変数の設定
+```bash
+# .env.local ファイルを作成
+POSTGRES_URL=your_local_postgres_connection_string
+JWT_SECRET=your_jwt_secret_key
+```
+
+4. 開発サーバーを起動
 ```bash
 npm run dev
 ```
@@ -60,7 +68,7 @@ npm run dev
 1. GitHubにリポジトリをプッシュ
 ```bash
 git add .
-git commit -m "Initial commit"
+git commit -m "Update for Vercel Postgres deployment"
 git push origin main
 ```
 
@@ -70,9 +78,24 @@ git push origin main
    - GitHubリポジトリを選択
    - 自動的に設定が適用される
 
-3. 環境変数の設定（必要に応じて）
+3. Vercel Postgresの設定
    - Vercelダッシュボードでプロジェクト設定
-   - "Environment Variables"で設定
+   - "Storage"タブで"Connect Database"をクリック
+   - "Postgres"を選択
+   - データベース名を入力して作成
+   - 接続情報をコピー
+
+4. 環境変数の設定
+   - Vercelダッシュボードでプロジェクト設定
+   - "Environment Variables"で以下を設定：
+     - `POSTGRES_URL`: Vercel Postgresの接続文字列
+     - `JWT_SECRET`: 任意のJWTシークレットキー
+
+5. データベースの初期化
+   - デプロイ後、以下のエンドポイントにPOSTリクエストを送信：
+   ```
+   POST https://your-app.vercel.app/api/init-db
+   ```
 
 ## 使用方法
 
@@ -90,6 +113,7 @@ git push origin main
 ### 認証
 - `POST /api/register` - ユーザー登録
 - `POST /api/login` - ログイン
+- `GET /api/profile` - ユーザー情報取得
 
 ### 活動報告書
 - `GET /api/activity-reports` - 報告書一覧取得
@@ -100,14 +124,44 @@ git push origin main
 - `POST /api/enrollment-certificates` - 証明書申請
 - `PUT /api/enrollment-certificates/:id/status` - ステータス更新（管理者）
 
-### プロフィール
-- `GET /api/profile` - ユーザー情報取得
+### システム
+- `GET /api/health` - ヘルスチェック
+- `POST /api/init-db` - データベース初期化
+
+## データベーススキーマ
+
+### users テーブル
+- `id`: 主キー (SERIAL)
+- `username`: ユーザー名 (VARCHAR(255), UNIQUE)
+- `email`: メールアドレス (VARCHAR(255), UNIQUE)
+- `password`: ハッシュ化されたパスワード (VARCHAR(255))
+- `role`: ユーザー役割 (VARCHAR(50), DEFAULT 'student')
+- `created_at`: 作成日時 (TIMESTAMP)
+
+### activity_reports テーブル
+- `id`: 主キー (SERIAL)
+- `user_id`: ユーザーID (INTEGER, FOREIGN KEY)
+- `title`: タイトル (VARCHAR(255))
+- `description`: 説明 (TEXT)
+- `date`: 日付 (VARCHAR(255))
+- `created_at`: 作成日時 (TIMESTAMP)
+
+### enrollment_certificates テーブル
+- `id`: 主キー (SERIAL)
+- `user_id`: ユーザーID (INTEGER, FOREIGN KEY)
+- `student_name`: 学生名 (VARCHAR(255))
+- `student_id`: 学生ID (VARCHAR(255))
+- `program`: プログラム名 (VARCHAR(255))
+- `start_date`: 開始日 (VARCHAR(255))
+- `end_date`: 終了日 (VARCHAR(255))
+- `status`: ステータス (VARCHAR(50), DEFAULT 'pending')
+- `created_at`: 作成日時 (TIMESTAMP)
 
 ## 注意事項
 
-- Vercelではファイルベースのデータベースが使用できないため、メモリベースのSQLiteを使用しています
-- データはリクエストごとにリセットされます（本番環境では永続的なデータベースの使用を推奨）
-- ファイルアップロード機能はVercelでは利用できません
+- Vercel Postgresを使用することで、永続的なデータベースが利用可能です
+- 本番環境では適切なJWTシークレットキーを設定してください
+- データベース初期化は初回デプロイ後に一度実行してください
 
 ## トラブルシューティング
 
@@ -115,11 +169,18 @@ git push origin main
 1. `vercel.json`の設定を確認
 2. ビルドログでエラーの詳細を確認
 3. 環境変数が正しく設定されているか確認
+4. Vercel Postgresの接続が正常か確認
+
+### データベース接続エラー
+1. `POSTGRES_URL`環境変数が正しく設定されているか確認
+2. Vercel Postgresのステータスを確認
+3. データベース初期化が実行されているか確認
 
 ### ローカル開発エラー
 1. 依存関係が正しくインストールされているか確認
 2. ポート5000が使用可能か確認
 3. Node.jsのバージョンが適切か確認
+4. PostgreSQLがローカルで動作しているか確認
 
 ## ライセンス
 
