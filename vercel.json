@@ -16,25 +16,23 @@
       }
     }
   ],
-  "routes": [
-    {
-      "src": "/static/(.*)",
-      "dest": "/client/build/static/$1"
-    },
-    {
-      "src": "/favicon.ico",
-      "dest": "/client/build/favicon.ico"
-    },
-    {
-      "src": "/manifest.json",
-      "dest": "/client/build/manifest.json"
-    },
-    {
-      "src": "/asset-manifest.json",
-      "dest": "/client/build/asset-manifest.json"
-    }
-  ],
   "rewrites": [
+    {
+      "source": "/static/(.*)",
+      "destination": "/client/build/static/$1"
+    },
+    {
+      "source": "/favicon.ico",
+      "destination": "/client/build/favicon.ico"
+    },
+    {
+      "source": "/manifest.json",
+      "destination": "/client/build/manifest.json"
+    },
+    {
+      "source": "/asset-manifest.json",
+      "destination": "/client/build/asset-manifest.json"
+    },
     {
       "source": "/api/(.*)",
       "destination": "/api/index.js"
