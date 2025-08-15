@@ -7,8 +7,22 @@ const { body, validationResult } = require('express-validator');
 
 const app = express();
 
+// CORS設定を最適化
+const corsOptions = {
+  origin: function (origin, callback) {
+    // 開発環境またはVercelドメインを許可
+    if (!origin || origin.includes('vercel.app') || origin.includes('localhost')) {
+      callback(null, true);
+    } else {
+      callback(new Error('CORS policy violation'));
+    }
+  },
+  credentials: true,
+  optionsSuccessStatus: 200
+};
+
 // ミドルウェア
-app.use(cors());
+app.use(cors(corsOptions));
 app.use(express.json());
 
 // 環境変数からJWTシークレットを取得
