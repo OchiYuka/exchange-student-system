@@ -1,7 +1,6 @@
 {
   "name": "exchange-student-system",
   "version": "1.0.0",
-  "type": "module",
   "scripts": {
     "start": "node server/index.js",
     "server": "node server/index.js",
