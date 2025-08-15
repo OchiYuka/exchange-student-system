@@ -24,7 +24,7 @@ const pool = new Pool({
 const initDatabase = async () => {
   try {
     const client = await pool.connect();
-    
+
     // 学生テーブル
     await client.query(`
       CREATE TABLE IF NOT EXISTS students (
@@ -85,8 +85,8 @@ const initDatabase = async () => {
     // デフォルト管理者アカウント作成
     const adminPassword = bcrypt.hashSync('admin123', 10);
     await client.query(`
-      INSERT INTO admins (username, password, name) 
-      VALUES ($1, $2, $3) 
+      INSERT INTO admins (username, password, name)
+      VALUES ($1, $2, $3)
       ON CONFLICT (username) DO NOTHING
     `, ['admin', adminPassword, 'システム管理者']);
 
@@ -116,6 +116,58 @@ const authenticateToken = (req, res, next) => {
   });
 };
 
+// 診断用エンドポイント
+app.get('/debug/env', (req, res) => {
+  res.json({
+    hasDatabaseUrl: !!process.env.DATABASE_URL,
+    hasJwtSecret: !!process.env.JWT_SECRET,
+    nodeEnv: process.env.NODE_ENV,
+    databaseUrlPrefix: process.env.DATABASE_URL ? process.env.DATABASE_URL.substring(0, 20) + '...' : 'not set'
+  });
+});
+
+app.get('/debug/db', async (req, res) => {
+  try {
+    console.log('Testing database connection...');
+    const client = await pool.connect();
+    console.log('Database connected successfully');
+    const result = await client.query('SELECT NOW()');
+    console.log('Query result:', result.rows[0]);
+    client.release();
+    res.json({ 
+      success: true, 
+      timestamp: result.rows[0].now,
+      message: 'Database connection successful'
+    });
+  } catch (error) {
+    console.error('Database connection error:', error);
+    res.status(500).json({ 
+      error: error.message,
+      stack: error.stack,
+      code: error.code
+    });
+  }
+});
+
+app.get('/debug/tables', async (req, res) => {
+  try {
+    const client = await pool.connect();
+    const result = await client.query(`
+      SELECT table_name FROM information_schema.tables 
+      WHERE table_schema = 'public'
+      ORDER BY table_name
+    `);
+    client.release();
+    res.json({ 
+      tables: result.rows.map(row => row.table_name),
+      count: result.rows.length
+    });
+  } catch (error) {
+    console.error('Table check error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // ヘルスチェックエンドポイント
 app.get('/health', (req, res) => {
   res.json({ status: 'OK', timestamp: new Date().toISOString() });
@@ -143,24 +195,24 @@ app.post('/register', [
 
   try {
     await initDatabase();
-    
+
     const { student_id, name, email, password, nationality, home_university, exchange_period } = req.body;
-    
+
     const hashedPassword = await bcrypt.hash(password, 10);
-    
+
     const client = await pool.connect();
     const result = await client.query(`
-      INSERT INTO students (student_id, name, email, password, nationality, home_university, exchange_period) 
-      VALUES ($1, $2, $3, $4, $5, $6, $7) 
+      INSERT INTO students (student_id, name, email, password, nationality, home_university, exchange_period)
+      VALUES ($1, $2, $3, $4, $5, $6, $7)
       RETURNING id, student_id, name, email
     `, [student_id, name, email, hashedPassword, nationality, home_university, exchange_period]);
-    
+
     const user = result.rows[0];
     const token = jwt.sign({ id: user.id, student_id: user.student_id, name: user.name }, JWT_SECRET, { expiresIn: '24h' });
-    
+
     client.release();
-    
-    res.status(201).json({ 
+
+    res.status(201).json({
       message: '登録が完了しました',
       token,
       user: { id: user.id, student_id: user.student_id, name: user.name, email: user.email }
@@ -178,30 +230,30 @@ app.post('/register', [
 app.post('/login', async (req, res) => {
   try {
     await initDatabase();
-    
+
     const { email, password } = req.body;
-    
+
     const client = await pool.connect();
     const result = await client.query('SELECT * FROM students WHERE email = $1', [email]);
-    
+
     if (result.rows.length === 0) {
       client.release();
       return res.status(401).json({ error: 'メールアドレスまたはパスワードが正しくありません' });
     }
-    
+
     const student = result.rows[0];
     const validPassword = await bcrypt.compare(password, student.password);
-    
+
     if (!validPassword) {
       client.release();
       return res.status(401).json({ error: 'メールアドレスまたはパスワードが正しくありません' });
     }
-    
+
     const token = jwt.sign({ id: student.id, student_id: student.student_id, name: student.name }, JWT_SECRET, { expiresIn: '24h' });
-    
+
     client.release();
-    
-    res.json({ 
+
+    res.json({
       message: 'ログインしました',
       token,
       user: { id: student.id, student_id: student.student_id, name: student.name, email: student.email }
@@ -224,22 +276,22 @@ app.post('/activity-reports', authenticateToken, [
 
   try {
     await initDatabase();
-    
+
     const { title, content } = req.body;
     const student_id = req.user.id;
-    
+
     const client = await pool.connect();
     const result = await client.query(`
-      INSERT INTO activity_reports (student_id, title, content) 
-      VALUES ($1, $2, $3) 
+      INSERT INTO activity_reports (student_id, title, content)
+      VALUES ($1, $2, $3)
       RETURNING id
     `, [student_id, title, content]);
-    
+
     client.release();
-    
-    res.status(201).json({ 
+
+    res.status(201).json({
       message: '活動報告書を提出しました',
-      report_id: result.rows[0].id 
+      report_id: result.rows[0].id
     });
   } catch (error) {
     console.error('Activity report error:', error);
@@ -259,22 +311,22 @@ app.post('/enrollment-certificates', authenticateToken, [
 
   try {
     await initDatabase();
-    
+
     const { request_type, purpose } = req.body;
     const student_id = req.user.id;
-    
+
     const client = await pool.connect();
     const result = await client.query(`
-      INSERT INTO enrollment_certificates (student_id, request_type, purpose) 
-      VALUES ($1, $2, $3) 
+      INSERT INTO enrollment_certificates (student_id, request_type, purpose)
+      VALUES ($1, $2, $3)
       RETURNING id
     `, [student_id, request_type, purpose]);
-    
+
     client.release();
-    
-    res.status(201).json({ 
+
+    res.status(201).json({
       message: '在籍証明書を申請しました',
-      certificate_id: result.rows[0].id 
+      certificate_id: result.rows[0].id
     });
   } catch (error) {
     console.error('Enrollment certificate error:', error);
@@ -286,18 +338,18 @@ app.post('/enrollment-certificates', authenticateToken, [
 app.get('/activity-reports', authenticateToken, async (req, res) => {
   try {
     await initDatabase();
-    
+
     const student_id = req.user.id;
-    
+
     const client = await pool.connect();
     const result = await client.query(`
-      SELECT * FROM activity_reports 
-      WHERE student_id = $1 
+      SELECT * FROM activity_reports
+      WHERE student_id = $1
       ORDER BY submitted_at DESC
     `, [student_id]);
-    
+
     client.release();
-    
+
     res.json(result.rows);
   } catch (error) {
     console.error('Get activity reports error:', error);
@@ -309,18 +361,18 @@ app.get('/activity-reports', authenticateToken, async (req, res) => {
 app.get('/enrollment-certificates', authenticateToken, async (req, res) => {
   try {
     await initDatabase();
-    
+
     const student_id = req.user.id;
-    
+
     const client = await pool.connect();
     const result = await client.query(`
-      SELECT * FROM enrollment_certificates 
-      WHERE student_id = $1 
+      SELECT * FROM enrollment_certificates
+      WHERE student_id = $1
       ORDER BY requested_at DESC
     `, [student_id]);
-    
+
     client.release();
-    
+
     res.json(result.rows);
   } catch (error) {
     console.error('Get enrollment certificates error:', error);
@@ -332,30 +384,30 @@ app.get('/enrollment-certificates', authenticateToken, async (req, res) => {
 app.post('/admin/login', async (req, res) => {
   try {
     await initDatabase();
-    
+
     const { username, password } = req.body;
-    
+
     const client = await pool.connect();
     const result = await client.query('SELECT * FROM admins WHERE username = $1', [username]);
-    
+
     if (result.rows.length === 0) {
       client.release();
       return res.status(401).json({ error: 'ユーザー名またはパスワードが正しくありません' });
     }
-    
+
     const admin = result.rows[0];
     const validPassword = await bcrypt.compare(password, admin.password);
-    
+
     if (!validPassword) {
       client.release();
       return res.status(401).json({ error: 'ユーザー名またはパスワードが正しくありません' });
     }
-    
+
     const token = jwt.sign({ id: admin.id, username: admin.username, role: 'admin' }, JWT_SECRET, { expiresIn: '24h' });
-    
+
     client.release();
-    
-    res.json({ 
+
+    res.json({
       message: 'ログインしました',
       token,
       admin: { id: admin.id, username: admin.username, name: admin.name }
@@ -370,21 +422,21 @@ app.post('/admin/login', async (req, res) => {
 app.get('/admin/activity-reports', authenticateToken, async (req, res) => {
   try {
     await initDatabase();
-    
+
     if (req.user.role !== 'admin') {
       return res.status(403).json({ error: '管理者権限が必要です' });
     }
-    
+
     const client = await pool.connect();
     const result = await client.query(`
-      SELECT ar.*, s.name as student_name, s.student_id 
-      FROM activity_reports ar 
-      JOIN students s ON ar.student_id = s.id 
+      SELECT ar.*, s.name as student_name, s.student_id
+      FROM activity_reports ar
+      JOIN students s ON ar.student_id = s.id
       ORDER BY ar.submitted_at DESC
     `);
-    
+
     client.release();
-    
+
     res.json(result.rows);
   } catch (error) {
     console.error('Get all activity reports error:', error);
@@ -393,24 +445,24 @@ app.get('/admin/activity-reports', authenticateToken, async (req, res) => {
 });
 
 // 全証明書申請取得（管理者用）
-app.get('/admin/enrollment-certificates', authenticateToken, async (req, res) => {
+app.get('/admin/enrollment-certs', authenticateToken, async (req, res) => {
   try {
     await initDatabase();
-    
+
     if (req.user.role !== 'admin') {
       return res.status(403).json({ error: '管理者権限が必要です' });
     }
-    
+
     const client = await pool.connect();
     const result = await client.query(`
-      SELECT ec.*, s.name as student_name, s.student_id 
-      FROM enrollment_certificates ec 
-      JOIN students s ON ec.student_id = s.id 
+      SELECT ec.*, s.name as student_name, s.student_id
+      FROM enrollment_certificates ec
+      JOIN students s ON ec.student_id = s.id
       ORDER BY ec.requested_at DESC
     `);
-    
+
     client.release();
-    
+
     res.json(result.rows);
   } catch (error) {
     console.error('Get all enrollment certificates error:', error);
@@ -422,23 +474,23 @@ app.get('/admin/enrollment-certificates', authenticateToken, async (req, res) =>
 app.put('/admin/activity-reports/:id', authenticateToken, async (req, res) => {
   try {
     await initDatabase();
-    
+
     if (req.user.role !== 'admin') {
       return res.status(403).json({ error: '管理者権限が必要です' });
     }
-    
+
     const { status, reviewer_comment } = req.body;
     const report_id = req.params.id;
-    
+
     const client = await pool.connect();
     await client.query(`
-      UPDATE activity_reports 
-      SET status = $1, reviewer_comment = $2, reviewed_at = CURRENT_TIMESTAMP 
+      UPDATE activity_reports
+      SET status = $1, reviewer_comment = $2, reviewed_at = CURRENT_TIMESTAMP
       WHERE id = $3
     `, [status, reviewer_comment, report_id]);
-    
+
     client.release();
-    
+
     res.json({ message: 'ステータスを更新しました' });
   } catch (error) {
     console.error('Update activity report error:', error);
@@ -447,26 +499,26 @@ app.put('/admin/activity-reports/:id', authenticateToken, async (req, res) => {
 });
 
 // 証明書ステータス更新（管理者用）
-app.put('/admin/enrollment-certificates/:id', authenticateToken, async (req, res) => {
+app.put('/admin/enrollment-certs/:id', authenticateToken, async (req, res) => {
   try {
     await initDatabase();
-    
+
     if (req.user.role !== 'admin') {
       return res.status(403).json({ error: '管理者権限が必要です' });
     }
-    
+
     const { status } = req.body;
     const certificate_id = req.params.id;
-    
+
     const client = await pool.connect();
     await client.query(`
-      UPDATE enrollment_certificates 
-      SET status = $1, issued_at = CURRENT_TIMESTAMP 
+      UPDATE enrollment_certificates
+      SET status = $1, issued_at = CURRENT_TIMESTAMP
       WHERE id = $2
     `, [status, certificate_id]);
-    
+
     client.release();
-    
+
     res.json({ message: 'ステータスを更新しました' });
   } catch (error) {
     console.error('Update enrollment certificate error:', error);
