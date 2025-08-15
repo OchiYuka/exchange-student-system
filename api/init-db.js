@@ -1,5 +1,5 @@
-const { Pool } = require('pg');
-const bcrypt = require('bcryptjs');
+import { Pool } from 'pg';
+import bcrypt from 'bcryptjs';
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL || process.env.NEON_DATABASE_URL,
@@ -70,7 +70,17 @@ const initDatabase = async () => {
   }
 };
 
-module.exports = async function handler(req, res) {
+export default async function handler(req, res) {
+  // CORSヘッダーを設定
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+
+  // OPTIONSリクエストの処理
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
@@ -82,4 +92,4 @@ module.exports = async function handler(req, res) {
     console.error('Database initialization error:', error);
     res.status(500).json({ error: 'Database initialization failed' });
   }
-};
+}
