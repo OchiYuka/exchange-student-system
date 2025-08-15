@@ -1,15 +1,6 @@
-const express = require('express');
-const cors = require('cors');
-const { Pool } = require('pg');
-const bcrypt = require('bcryptjs');
+import { Pool } from 'pg';
+import bcrypt from 'bcryptjs';
 
-const app = express();
-
-// ミドルウェア
-app.use(cors());
-app.use(express.json());
-
-// Neon PostgreSQL接続設定
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL || process.env.NEON_DATABASE_URL,
   ssl: {
@@ -79,15 +70,16 @@ const initDatabase = async () => {
   }
 };
 
-// データベース初期化エンドポイント
-app.post('/', async (req, res) => {
+export default async function handler(req, res) {
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Method not allowed' });
+  }
+
   try {
     await initDatabase();
-    res.json({ message: 'Database initialized successfully' });
+    res.status(200).json({ message: 'Database initialized successfully' });
   } catch (error) {
     console.error('Database initialization error:', error);
     res.status(500).json({ error: 'Database initialization failed' });
   }
-});
-
-module.exports = app;
+}
