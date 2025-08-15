@@ -8,12 +8,6 @@
         "distDir": "build",
         "installCommand": "cd client && npm ci --only=production --no-audit --no-fund",
         "buildCommand": "cd client && npm run build"
-      },
-      "env": {
-        "GENERATE_SOURCEMAP": "false",
-        "NODE_OPTIONS": "--max_old_space_size=4096",
-        "CI": "false",
-        "NPM_FLAGS": "--production --no-audit --no-fund"
       }
     },
     {
@@ -47,5 +41,10 @@
     "api/index.js": {
       "maxDuration": 30
     }
+  },
+  "env": {
+    "GENERATE_SOURCEMAP": "false",
+    "NODE_OPTIONS": "--max_old_space_size=4096",
+    "CI": "false"
   }
 }
