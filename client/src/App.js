@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 
 function App() {
-  const [currentPage, setCurrentPage] = useState('login');
   const [user, setUser] = useState(null);
   const [reports, setReports] = useState([]);
   const [certificates, setCertificates] = useState([]);
   const [showReportForm, setShowReportForm] = useState(false);
   const [showCertificateForm, setShowCertificateForm] = useState(false);
-  const [isAdmin, setIsAdmin] = useState(false); // eslint-disable-line no-unused-vars
+  const [isAdmin, setIsAdmin] = useState(false);
 
   // 学生の提出機能を改善
   const submitReport = (reportData) => {
@@ -75,14 +75,14 @@ function App() {
       if (email === 'admin' && password === 'admin123') {
         setUser({ name: '管理者', email: email });
         setIsAdmin(true);
-        setCurrentPage('admin-dashboard');
         console.log('管理者としてログインしました'); // デバッグ用
+        return <Navigate to="/admin" replace />;
       } else {
         // 一般ユーザーログイン
         setUser({ name: 'テストユーザー', email: email });
         setIsAdmin(false);
-        setCurrentPage('dashboard');
         console.log('一般ユーザーとしてログインしました'); // デバッグ用
+        return <Navigate to="/dashboard" replace />;
       }
     };
 
@@ -185,7 +185,8 @@ function App() {
   const DashboardPage = () => {
     const handleLogout = () => {
       setUser(null);
-      setCurrentPage('login');
+      setIsAdmin(false);
+      return <Navigate to="/" replace />;
     };
 
     const getStatusBadge = (status) => {
@@ -570,7 +571,7 @@ function App() {
               gap: '0.5rem'
             }}
           >
-            📜 在籍証明書を申請
+            �� 在籍証明書を申請
           </button>
         </div>
 
@@ -650,7 +651,7 @@ function App() {
             onClick={() => {
               setUser(null);
               setIsAdmin(false);
-              setCurrentPage('login');
+              return <Navigate to="/" replace />;
             }}
             style={{
               padding: '10px 20px',
@@ -796,16 +797,17 @@ function App() {
     );
   };
 
-  // ページの表示
-  if (currentPage === 'login') {
-    return <LoginPage />;
-  } else if (currentPage === 'dashboard') {
-    return <DashboardPage />;
-  } else if (currentPage === 'admin-dashboard') {
-    return <AdminDashboard />;
-  }
-
-  return <LoginPage />;
+  // ルーティング設定
+  return (
+    <Router>
+      <Routes>
+        <Route path="/" element={<LoginPage />} />
+        <Route path="/dashboard" element={<DashboardPage />} />
+        <Route path="/admin" element={<AdminDashboard />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </Router>
+  );
 }
 
-export default App; 
+export default App;
