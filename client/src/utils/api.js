@@ -3,8 +3,8 @@ import axios from 'axios';
 // 環境に応じてAPIのベースURLを設定
 const getApiBaseUrl = () => {
   if (process.env.NODE_ENV === 'production') {
-    // Vercelデプロイ時は同じドメインのAPIを使用
-    return '/api';
+    // Vercelデプロイ時は絶対パスを使用
+    return window.location.origin + '/api';
   }
   // 開発時はローカルサーバーを使用
   return 'http://localhost:5000/api';
@@ -49,5 +49,3 @@ api.interceptors.response.use(
 );
 
 export default api;
-
-
