@@ -1,5 +1,5 @@
 const { Pool } = require('pg');
-require('dotenv').config();
+require('dotenv').config({ path: '.env.local' });
 
 // Neon PostgreSQL接続設定
 const pool = new Pool({
@@ -24,6 +24,7 @@ async function testConnection() {
     console.log('接続を閉じました');
   } catch (error) {
     console.error('❌ データベース接続エラー:', error.message);
+    console.error('詳細エラー:', error);
     process.exit(1);
   }
 }

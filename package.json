@@ -13,6 +13,8 @@
     "init-db": "curl -X POST http://localhost:5000/api/init-db"
   },
   "dependencies": {
-    "concurrently": "^8.2.2"
+    "concurrently": "^8.2.2",
+    "dotenv": "^17.2.1",
+    "pg": "^8.16.3"
   }
 }
