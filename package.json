@@ -6,9 +6,11 @@
     "server": "node server/index.js",
     "client": "cd client && npm start",
     "dev": "concurrently \"npm run server\" \"npm run client\"",
-    "install-all": "npm install && cd client && npm install && cd ../server && npm install",
+    "install-all": "npm install && cd client && npm install && cd ../server && npm install && cd ../api && npm install",
     "build": "cd client && npm run build",
-    "vercel-build": "cd client && npm install && npm run build"
+    "vercel-build": "cd client && npm install && npm run build",
+    "test-db": "node test-db-connection.js",
+    "init-db": "curl -X POST http://localhost:5000/api/init-db"
   },
   "dependencies": {
     "concurrently": "^8.2.2"

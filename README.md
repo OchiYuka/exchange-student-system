@@ -28,13 +28,13 @@
 ### バックエンド
 - Node.js
 - Express.js
-- Vercel Postgres (本番環境)
+- Neon PostgreSQL (本番環境)
 - JWT認証
 - bcryptjs (パスワードハッシュ化)
 
 ### デプロイ
 - Vercel (フロントエンド + バックエンド)
-- Vercel Postgres (データベース)
+- Neon PostgreSQL (データベース)
 
 ## セットアップ
 
@@ -54,7 +54,7 @@ npm run install-all
 3. 環境変数の設定
 ```bash
 # .env.local ファイルを作成
-POSTGRES_URL=your_local_postgres_connection_string
+DATABASE_URL=your_neon_postgres_connection_string
 JWT_SECRET=your_jwt_secret_key
 ```
 
@@ -78,17 +78,15 @@ git push origin main
    - GitHubリポジトリを選択
    - 自動的に設定が適用される
 
-3. Vercel Postgresの設定
-   - Vercelダッシュボードでプロジェクト設定
-   - "Storage"タブで"Connect Database"をクリック
-   - "Postgres"を選択
-   - データベース名を入力して作成
-   - 接続情報をコピー
+3. Neon PostgreSQLの設定
+   - [Neon](https://neon.tech)でアカウントを作成
+   - 新しいプロジェクトを作成
+   - 接続文字列をコピー（DATABASE_URL）
 
 4. 環境変数の設定
    - Vercelダッシュボードでプロジェクト設定
    - "Environment Variables"で以下を設定：
-     - `POSTGRES_URL`: Vercel Postgresの接続文字列
+     - `DATABASE_URL`: Neon PostgreSQLの接続文字列
      - `JWT_SECRET`: 任意のJWTシークレットキー
 
 5. データベースの初期化
@@ -159,7 +157,7 @@ git push origin main
 
 ## 注意事項
 
-- Vercel Postgresを使用することで、永続的なデータベースが利用可能です
+- Neon PostgreSQLを使用することで、高性能なサーバーレスデータベースが利用可能です
 - 本番環境では適切なJWTシークレットキーを設定してください
 - データベース初期化は初回デプロイ後に一度実行してください
 
@@ -172,8 +170,8 @@ git push origin main
 4. Vercel Postgresの接続が正常か確認
 
 ### データベース接続エラー
-1. `POSTGRES_URL`環境変数が正しく設定されているか確認
-2. Vercel Postgresのステータスを確認
+1. `DATABASE_URL`環境変数が正しく設定されているか確認
+2. Neon PostgreSQLのステータスを確認
 3. データベース初期化が実行されているか確認
 
 ### ローカル開発エラー

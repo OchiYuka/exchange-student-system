@@ -31,13 +31,14 @@
       "dest": "/client/build/manifest.json"
     },
     {
+      "src": "/asset-manifest.json",
+      "dest": "/client/build/asset-manifest.json"
+    },
+    {
       "src": "/(.*)",
       "dest": "/client/build/index.html"
     }
   ],
-  "env": {
-    "NODE_ENV": "production"
-  },
   "functions": {
     "api/index.js": {
       "maxDuration": 30

@@ -1,3 +1,4 @@
+require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const { Pool } = require('pg');
@@ -11,10 +12,12 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Vercel Postgres接続設定
+// Neon PostgreSQL接続設定
 const pool = new Pool({
-  connectionString: process.env.POSTGRES_URL,
-  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+  connectionString: process.env.DATABASE_URL || process.env.NEON_DATABASE_URL,
+  ssl: {
+    rejectUnauthorized: false
+  }
 });
 
 // データベース初期化
