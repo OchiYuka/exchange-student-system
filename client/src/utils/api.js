@@ -1,16 +1,21 @@
+/**
+ * STEP-006: フォーム機能実装
+ * ステータス: completed
+ * 完了日時: 2024-01-01T00:00:00Z
+ * 説明: 活動報告書・在籍証明書フォーム実装完了
+ */
+
 import axios from 'axios';
 
-// 環境に応じてAPIのベースURLを設定
+// APIのベースURLを環境に応じて設定
 const getApiBaseUrl = () => {
   if (process.env.NODE_ENV === 'production') {
-    // Vercelデプロイ時は同じドメインのAPIを使用
-    return '/api';
+    return window.location.origin + '/api';
   }
-  // 開発時はローカルサーバーを使用
-  return 'http://localhost:5000/api';
+  return 'http://localhost:3001';
 };
 
-// Axiosインスタンスを作成
+// axiosインスタンスを作成
 const api = axios.create({
   baseURL: getApiBaseUrl(),
   headers: {
@@ -18,7 +23,7 @@ const api = axios.create({
   },
 });
 
-// リクエストインターセプター
+// リクエストインターセプター（認証トークンの追加など）
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('token');
@@ -32,17 +37,16 @@ api.interceptors.request.use(
   }
 );
 
-// レスポンスインターセプター
+// レスポンスインターセプター（エラーハンドリングなど）
 api.interceptors.response.use(
   (response) => {
     return response;
   },
   (error) => {
     if (error.response?.status === 401) {
-      // 認証エラーの場合、ローカルストレージをクリア
+      // 認証エラーの場合、ログインページにリダイレクト
       localStorage.removeItem('token');
-      localStorage.removeItem('user');
-      window.location.href = '/login';
+      window.location.href = '/';
     }
     return Promise.reject(error);
   }

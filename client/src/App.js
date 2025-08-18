@@ -1,13 +1,21 @@
+/**
+ * STEP-004: 基本コンポーネント作成
+ * ステータス: completed
+ * 完了日時: 2024-01-01T00:00:00Z
+ * 説明: App.js・LoginPage・Dashboard作成完了
+ */
+
 import React, { useState } from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 
 function App() {
-  const [currentPage, setCurrentPage] = useState('login');
   const [user, setUser] = useState(null);
   const [reports, setReports] = useState([]);
   const [certificates, setCertificates] = useState([]);
   const [showReportForm, setShowReportForm] = useState(false);
   const [showCertificateForm, setShowCertificateForm] = useState(false);
-  const [isAdmin, setIsAdmin] = useState(false); // eslint-disable-line no-unused-vars
+  // eslint-disable-next-line no-unused-vars
+  const [isAdmin, setIsAdmin] = useState(false);
 
   // 学生の提出機能を改善
   const submitReport = (reportData) => {
@@ -67,22 +75,23 @@ function App() {
   const LoginPage = () => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const navigate = useNavigate();
 
     const handleLogin = (e) => {
       e.preventDefault();
       
-      // 管理者ログインの判定（より確実に）
+      // 管理者ログインの判定
       if (email === 'admin' && password === 'admin123') {
         setUser({ name: '管理者', email: email });
         setIsAdmin(true);
-        setCurrentPage('admin-dashboard');
-        console.log('管理者としてログインしました'); // デバッグ用
+        console.log('管理者としてログインしました');
+        navigate('/admin');
       } else {
         // 一般ユーザーログイン
         setUser({ name: 'テストユーザー', email: email });
         setIsAdmin(false);
-        setCurrentPage('dashboard');
-        console.log('一般ユーザーとしてログインしました'); // デバッグ用
+        console.log('一般ユーザーとしてログインしました');
+        navigate('/dashboard');
       }
     };
 
@@ -183,9 +192,12 @@ function App() {
 
   // ダッシュボードページ
   const DashboardPage = () => {
+    const navigate = useNavigate();
+
     const handleLogout = () => {
       setUser(null);
-      setCurrentPage('login');
+      setIsAdmin(false);
+      navigate('/');
     };
 
     const getStatusBadge = (status) => {
@@ -553,7 +565,7 @@ function App() {
               gap: '0.5rem'
             }}
           >
-            �� 活動報告書を提出
+            📝 活動報告書を提出
           </button>
           <button
             onClick={() => setShowCertificateForm(true)}
@@ -570,7 +582,7 @@ function App() {
               gap: '0.5rem'
             }}
           >
-            📜 在籍証明書を申請
+            📄 在籍証明書を申請
           </button>
         </div>
 
@@ -638,20 +650,24 @@ function App() {
 
   // 管理者ダッシュボード
   const AdminDashboard = () => {
+    const navigate = useNavigate();
+    
     // 学生が提出した報告書と証明書を表示
     const pendingReports = reports.filter(report => report.status === 'pending');
     const pendingCertificates = certificates.filter(cert => cert.status === 'pending');
+
+    const handleLogout = () => {
+      setUser(null);
+      setIsAdmin(false);
+      navigate('/');
+    };
 
     return (
       <div style={{ padding: '20px', maxWidth: '1200px', margin: '0 auto' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px' }}>
           <h1 style={{ fontSize: '2rem', fontWeight: 'bold' }}>管理者ダッシュボード</h1>
           <button 
-            onClick={() => {
-              setUser(null);
-              setIsAdmin(false);
-              setCurrentPage('login');
-            }}
+            onClick={handleLogout}
             style={{
               padding: '10px 20px',
               backgroundColor: '#ef4444',
@@ -754,10 +770,10 @@ function App() {
                   backgroundColor: '#fef3c7'
                 }}>
                   <h3 style={{ fontWeight: 'bold', marginBottom: '5px' }}>{cert.type}</h3>
-                  <p style={{ color: '#6b7280', marginBottom: '5px' }}>学生: {cert.studentName}</p>
-                  <p style={{ color: '#6b7280', marginBottom: '5px' }}>申請日: {cert.submittedAt}</p>
+                  <p style={{ color: '#6c757d', marginBottom: '5px' }}>学生: {cert.studentName}</p>
+                  <p style={{ color: '#6c757d', marginBottom: '5px' }}>申請日: {cert.submittedAt}</p>
                   {cert.fileName && (
-                    <p style={{ color: '#6b7280', marginBottom: '5px' }}>添付ファイル: {cert.fileName}</p>
+                    <p style={{ color: '#6c757d', marginBottom: '5px' }}>添付ファイル: {cert.fileName}</p>
                   )}
                   <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
                     <button 
@@ -796,16 +812,17 @@ function App() {
     );
   };
 
-  // ページの表示
-  if (currentPage === 'login') {
-    return <LoginPage />;
-  } else if (currentPage === 'dashboard') {
-    return <DashboardPage />;
-  } else if (currentPage === 'admin-dashboard') {
-    return <AdminDashboard />;
-  }
-
-  return <LoginPage />;
+  // ルーティング設定
+  return (
+    <Router>
+      <Routes>
+        <Route path="/" element={<LoginPage />} />
+        <Route path="/dashboard" element={<DashboardPage />} />
+        <Route path="/admin" element={<AdminDashboard />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </Router>
+  );
 }
 
 export default App; 

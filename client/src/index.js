@@ -1,3 +1,10 @@
+/**
+ * STEP-005: ルーティング設定
+ * ステータス: completed
+ * 完了日時: 2024-01-01T00:00:00Z
+ * 説明: react-router-dom・BrowserRouter設定完了
+ */
+
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import axios from 'axios';

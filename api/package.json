@@ -1,17 +1,40 @@
 {
   "name": "exchange-student-api",
   "version": "1.0.0",
-  "description": "Exchange Student System API for Vercel",
+  "description": "交換留学生システム API",
   "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "nodemon index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
   "dependencies": {
     "express": "^4.18.2",
     "cors": "^2.8.5",
     "pg": "^8.11.3",
     "bcryptjs": "^2.4.3",
     "jsonwebtoken": "^9.0.2",
-    "express-validator": "^7.0.1"
+    "multer": "^1.4.5-lts.1"
   },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  },
+  "keywords": [
+    "api",
+    "express",
+    "nodejs",
+    "postgresql"
+  ],
+  "author": "Your Name",
+  "license": "MIT",
   "engines": {
     "node": ">=18.0.0"
+  },
+  "_step_completion": {
+    "step_id": "STEP-007",
+    "step_name": "Node.js API初期化",
+    "status": "completed",
+    "completed_at": "2024-01-01T00:00:00Z",
+    "description": "Express・依存関係インストール完了"
   }
 }

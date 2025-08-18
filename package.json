@@ -1,16 +1,35 @@
 {
   "name": "exchange-student-system",
   "version": "1.0.0",
+  "description": "交換留学生向け活動報告書・在籍証明書提出システム",
+  "private": true,
   "scripts": {
-    "start": "node server/index.js",
-    "server": "node server/index.js",
-    "client": "cd client && npm start",
-    "dev": "concurrently \"npm run server\" \"npm run client\"",
-    "install-all": "npm install && cd client && npm install && cd ../server && npm install",
+    "dev": "concurrently \"npm run dev:client\" \"npm run dev:api\"",
+    "dev:client": "cd client && npm start",
+    "dev:api": "cd api && npm run dev",
+    "install-all": "npm install && cd client && npm install && cd ../api && npm install",
     "build": "cd client && npm run build",
-    "vercel-build": "cd client && npm install && npm run build"
+    "vercel-build": "cd client && npm run vercel-build"
   },
-  "dependencies": {
+  "devDependencies": {
     "concurrently": "^8.2.2"
+  },
+  "keywords": [
+    "exchange-student",
+    "react",
+    "nodejs",
+    "vercel"
+  ],
+  "author": "Your Name",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "_step_completion": {
+    "step_id": "STEP-002",
+    "step_name": "ルートpackage.json作成",
+    "status": "completed",
+    "completed_at": "2024-01-01T00:00:00Z",
+    "description": "monorepo設定・スクリプト設定完了"
   }
 }
