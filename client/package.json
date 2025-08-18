@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "交換留学生システム クライアント",
   "private": true,
-  "homepage": "/",
+  "homepage": ".",
   "dependencies": {
     "axios": "^1.11.0",
     "lucide-react": "^0.294.0",
