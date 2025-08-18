@@ -197,21 +197,124 @@ vercel --prod
 - **STEP-017〜018**: 404エラー解決・最適化
 
 ### 🔧 技術的課題と解決
-- **404エラー**: Vercelの自動設定とブランチ監視の問題を解決
-- **ビルドエラー**: 依存関係のインストール順序を最適化
-- **SPAルーティング**: `vercel.json`の設定を最適化
+
+#### 1. 404エラーの解決過程
+**問題**: デプロイ後にSPAルーティングが正常に動作せず、`/dashboard`や`/admin`で404エラーが発生
+
+**原因分析**:
+- Vercelが`main`ブランチを監視していたが、コードは`master`ブランチにあった
+- `vercel.json`の設定がSPAルーティングに最適化されていなかった
+- 静的ファイルとSPAルーティングの競合
+
+**解決手順**:
+1. **STEP-017-1**: ブランチ問題を発見・修正
+   - `git push origin master:main`でmainブランチを更新
+   - Vercelが正しいブランチを監視するように修正
+
+2. **STEP-017-2**: vercel.json設定の最適化
+   - `filesystem`ハンドルを削除して競合を回避
+   - `rewrites`設定に変更してSPAルーティングを改善
+
+3. **STEP-017-3**: 最終的な解決
+   - `vercel.json`を完全に削除してVercelの自動設定に任せる
+   - VercelダッシュボードでFramework Presetを`Create React App`に設定
+
+#### 2. ビルドエラーの解決過程
+**問題**: `react-scripts: command not found`エラーが発生
+
+**原因分析**:
+- クライアントディレクトリの依存関係がインストールされていない
+- Vercelがルートディレクトリでビルドを実行していた
+
+**解決手順**:
+1. **STEP-018-1**: vercel-buildスクリプトの修正
+   ```json
+   "vercel-build": "npm run install-all && cd client && npm run vercel-build"
+   ```
+
+2. **STEP-018-2**: 依存関係の確実なインストール
+   - `install-all`スクリプトを実行してクライアントとAPIの依存関係を両方インストール
+   - `react-scripts`が利用可能になるように修正
+
+#### 3. SPAルーティングの最適化
+**問題**: React Routerのパスが正常に動作しない
+
+**解決手順**:
+1. **STEP-018-3**: Vercelの自動設定を活用
+   - `vercel.json`を削除してVercelの自動SPA設定に任せる
+   - Create React Appの適切な設定が自動適用される
+
+**最終的な解決策**:
+- VercelダッシュボードでFramework Preset: `Create React App`
+- Build Command: `npm run vercel-build`
+- Output Directory: `client/build`
+- ブランチ監視: `main`
 
 ## 🐛 トラブルシューティング
 
-### よくある問題
+### よくある問題と解決方法
 
-**404エラーが発生する場合**
-- Vercelのプロジェクト設定でFramework Presetが`Create React App`になっているか確認
-- `main`ブランチが正しく監視されているか確認
+#### 404エラーが発生する場合
+**症状**: `/dashboard`、`/admin`などのReact Routerパスで404エラーが発生
 
-**ビルドエラーが発生する場合**
-- Node.jsのバージョンが18.0.0以上であることを確認
-- 依存関係が正しくインストールされているか確認
+**原因**:
+- Vercelのプロジェクト設定が正しくない
+- ブランチ監視の問題
+- SPAルーティングの設定不備
+
+**解決方法**:
+1. **Vercelダッシュボードの設定確認**
+   - Framework Preset: `Create React App`
+   - Build Command: `npm run vercel-build`
+   - Output Directory: `client/build`
+
+2. **ブランチ監視の確認**
+   - 監視ブランチが`main`になっているか確認
+   - `git push origin master:main`でmainブランチを更新
+
+3. **vercel.jsonの設定**
+   - 必要に応じて`vercel.json`を削除してVercelの自動設定に任せる
+
+#### ビルドエラーが発生する場合
+**症状**: `react-scripts: command not found`エラー
+
+**原因**:
+- クライアントディレクトリの依存関係がインストールされていない
+- Node.jsのバージョンが古い
+
+**解決方法**:
+1. **依存関係の確認**
+   ```bash
+   npm run install-all
+   ```
+
+2. **Node.jsバージョンの確認**
+   - Node.js 18.0.0以上であることを確認
+   - `node --version`でバージョンを確認
+
+3. **vercel-buildスクリプトの修正**
+   ```json
+   "vercel-build": "npm run install-all && cd client && npm run vercel-build"
+   ```
+
+#### SPAルーティングが動作しない場合
+**症状**: React Routerのパスが正常に動作しない
+
+**解決方法**:
+1. **Vercelの自動設定を活用**
+   - `vercel.json`を削除
+   - Vercelの自動SPA設定に任せる
+
+2. **homepage設定の確認**
+   ```json
+   "homepage": "/"
+   ```
+
+### デバッグ手順
+1. **Vercelのデプロイログを確認**
+2. **ブラウザの開発者ツールでエラーを確認**
+3. **ローカル環境で動作確認**
+4. **環境変数の設定を確認**
 
 ## 🤝 コントリビューション
 
