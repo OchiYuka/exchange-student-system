@@ -121,22 +121,262 @@ npm run install-all
 
 ## 🌐 デプロイ
 
-### Vercel へのデプロイ
+### 📋 デプロイまでの詳細ステップ
 
-1. **GitHubリポジトリをフォーク**
-2. **Vercelでプロジェクトを作成**
-3. **環境変数を設定**
-4. **自動デプロイが開始**
-
-### 手動デプロイ
-
+#### フェーズ1: プロジェクト初期設定
+**STEP-001**: プロジェクト構造作成
 ```bash
-# ビルド
-npm run build
+# プロジェクトディレクトリ作成
+mkdir exchange-student-system
+cd exchange-student-system
 
-# Vercel CLIでデプロイ
-vercel --prod
+# モノレポ構造作成
+mkdir client api
 ```
+
+**STEP-002**: ルートpackage.json作成
+```json
+{
+  "name": "exchange-student-system",
+  "version": "1.0.0",
+  "description": "Exchange Student Activity Report System",
+  "scripts": {
+    "dev": "concurrently \"npm run dev:client\" \"npm run dev:api\"",
+    "dev:client": "cd client && npm start",
+    "dev:api": "cd api && npm run dev",
+    "install-all": "npm install && cd client && npm install && cd ../api && npm install",
+    "build": "cd client && npm run build",
+    "vercel-build": "npm run install-all && cd client && npm run vercel-build"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}
+```
+
+#### フェーズ2: フロントエンド開発
+**STEP-003**: Reactアプリケーション初期化
+```bash
+cd client
+npx create-react-app . --template typescript
+npm install react-router-dom axios react-hook-form lucide-react
+npm install -D tailwindcss postcss autoprefixer
+npx tailwindcss init -p
+```
+
+**STEP-004**: Tailwind CSS設定
+```javascript
+// tailwind.config.js
+module.exports = {
+  content: ["./src/**/*.{js,jsx,ts,tsx}"],
+  theme: { extend: {} },
+  plugins: []
+}
+```
+
+**STEP-005**: 基本コンポーネント作成
+```bash
+mkdir src/components src/contexts src/utils
+```
+
+**STEP-006**: ルーティング設定
+```jsx
+// App.js
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import Login from './components/Login';
+import Register from './components/Register';
+import StudentDashboard from './components/StudentDashboard';
+import AdminDashboard from './components/AdminDashboard';
+
+function App() {
+  return (
+    <Router>
+      <Routes>
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+        <Route path="/dashboard" element={<StudentDashboard />} />
+        <Route path="/admin" element={<AdminDashboard />} />
+        <Route path="/" element={<Navigate to="/login" />} />
+      </Routes>
+    </Router>
+  );
+}
+```
+
+#### フェーズ3: バックエンド開発
+**STEP-007**: Node.js API初期化
+```bash
+cd ../api
+npm init -y
+npm install express cors bcryptjs jsonwebtoken pg dotenv
+npm install -D nodemon
+```
+
+**STEP-008**: Express サーバー実装
+```javascript
+// api/index.js
+const express = require('express');
+const cors = require('cors');
+const { Pool } = require('pg');
+
+const app = express();
+const port = process.env.PORT || 3001;
+
+app.use(cors({
+  origin: process.env.NODE_ENV === 'production' 
+    ? 'https://your-domain.vercel.app' 
+    : 'http://localhost:3000',
+  credentials: true
+}));
+
+app.use(express.json());
+
+// データベース接続
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+});
+
+// ルート定義
+app.get('/api/health', (req, res) => {
+  res.json({ status: 'OK', message: 'API is running' });
+});
+
+app.listen(port, () => {
+  console.log(`Server running on port ${port}`);
+});
+```
+
+**STEP-009**: データベース設定
+```sql
+-- database.sql
+CREATE TABLE users (
+  id SERIAL PRIMARY KEY,
+  username VARCHAR(50) UNIQUE NOT NULL,
+  email VARCHAR(100) UNIQUE NOT NULL,
+  password_hash VARCHAR(255) NOT NULL,
+  role VARCHAR(20) DEFAULT 'student',
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE activity_reports (
+  id SERIAL PRIMARY KEY,
+  user_id INTEGER REFERENCES users(id),
+  title VARCHAR(200) NOT NULL,
+  content TEXT NOT NULL,
+  status VARCHAR(20) DEFAULT 'pending',
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE enrollment_certificates (
+  id SERIAL PRIMARY KEY,
+  user_id INTEGER REFERENCES users(id),
+  file_url VARCHAR(500) NOT NULL,
+  status VARCHAR(20) DEFAULT 'pending',
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+#### フェーズ4: 統合・テスト
+**STEP-010**: フロントエンド・バックエンド統合
+```javascript
+// client/src/utils/api.js
+import axios from 'axios';
+
+const API_BASE_URL = process.env.NODE_ENV === 'production' 
+  ? 'https://your-domain.vercel.app/api' 
+  : 'http://localhost:3001/api';
+
+const api = axios.create({
+  baseURL: API_BASE_URL,
+  withCredentials: true
+});
+
+export default api;
+```
+
+**STEP-011**: ローカルテスト
+```bash
+# ルートディレクトリで
+npm run install-all
+npm run dev
+```
+
+#### フェーズ5: デプロイ準備
+**STEP-012**: ビルド設定
+```json
+// client/package.json
+{
+  "homepage": "/",
+  "scripts": {
+    "start": "react-scripts start",
+    "build": "react-scripts build",
+    "vercel-build": "react-scripts build"
+  }
+}
+```
+
+**STEP-013**: 環境変数設定
+```bash
+# .env (ルートディレクトリ)
+DATABASE_URL=your_postgresql_connection_string
+JWT_SECRET=your_jwt_secret_key
+NODE_ENV=production
+```
+
+#### フェーズ6: GitHub・Vercel設定
+**STEP-014**: GitHubリポジトリ作成
+```bash
+git init
+git add .
+git commit -m "Initial commit: Exchange Student System"
+git branch -M master
+git remote add origin https://github.com/your-username/exchange-student-system.git
+git push -u origin master
+```
+
+**STEP-015**: Vercelプロジェクト作成
+1. [Vercel](https://vercel.com)にアクセス
+2. GitHubアカウントでログイン
+3. "New Project"をクリック
+4. GitHubリポジトリを選択
+5. 以下の設定を適用：
+   - **Framework Preset**: `Create React App`
+   - **Build Command**: `npm run vercel-build`
+   - **Output Directory**: `client/build`
+   - **Install Command**: `npm run install-all`
+
+**STEP-016**: 環境変数設定（Vercel）
+1. Vercelダッシュボードでプロジェクトを開く
+2. "Settings" → "Environment Variables"
+3. 以下の変数を追加：
+   - `DATABASE_URL`: PostgreSQL接続文字列
+   - `JWT_SECRET`: JWT秘密鍵
+   - `NODE_ENV`: `production`
+
+**STEP-017**: 初回デプロイ実行
+```bash
+# コードをプッシュ
+git add .
+git commit -m "Ready for deployment"
+git push origin master
+```
+
+### 🎯 デプロイ成功の確認
+1. **Vercelダッシュボード**でデプロイ状況を確認
+2. **デプロイログ**でエラーがないことを確認
+3. **本番URL**でアプリケーションが正常に動作することを確認
+
+### 📝 重要な設定ポイント
+- **ブランチ監視**: Vercelで`main`ブランチを監視するように設定
+- **API Routes**: `/api/*`のリクエストが正しくAPIに転送されることを確認
+- **SPA Routing**: React Routerのパスが正常に動作することを確認
+- **CORS設定**: 本番環境でのCORS設定を適切に行う
+
+### 🔧 トラブルシューティング
+デプロイ時に問題が発生した場合は、以下のセクションを参照してください：
+- [技術的課題と解決](#-技術的課題と解決)
+- [トラブルシューティング](#-トラブルシューティング)
 
 
 
