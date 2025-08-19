@@ -383,6 +383,7 @@ git push origin master
 ### 🔧 技術的課題と解決
 
 #### 1. 404エラーの解決過程
+
 **問題**: デプロイ後にSPAルーティングが正常に動作せず、`/dashboard`や`/admin`で404エラーが発生
 
 **原因分析（初心者向け説明）**:
@@ -413,6 +414,7 @@ Vercelは「Create React App」というReactの標準的な開発方法を自�
    - VercelダッシュボードでFramework Presetを`Create React App`に設定
 
 #### 2. ビルドエラーの解決過程
+
 **問題**: `react-scripts: command not found`エラーが発生
 
 **原因分析（初心者向け説明）**:
@@ -436,6 +438,7 @@ Reactアプリを動かすために必要な`react-scripts`というファイル
    - `react-scripts`が利用可能になるように修正
 
 #### 3. SPAルーティングの最適化
+
 **問題**: React Routerのパスが正常に動作しない
 
 **原因分析（初心者向け説明）**:
@@ -473,7 +476,8 @@ Vercelが「このURLは実際のファイルなのか、それともReactアプ
 
 ### よくある問題と解決方法
 
-#### 404エラーが発生する場合
+#### 1. 404エラーが発生する場合
+
 **症状**: `/dashboard`、`/admin`などのReact Routerパスで404エラーが発生
 
 **原因**:
@@ -494,7 +498,8 @@ Vercelが「このURLは実際のファイルなのか、それともReactアプ
 3. **vercel.jsonの設定**
    - 必要に応じて`vercel.json`を削除してVercelの自動設定に任せる
 
-#### ビルドエラーが発生する場合
+#### 2. ビルドエラーが発生する場合
+
 **症状**: `react-scripts: command not found`エラー
 
 **原因**:
@@ -516,7 +521,8 @@ Vercelが「このURLは実際のファイルなのか、それともReactアプ
    "vercel-build": "npm run install-all && cd client && npm run vercel-build"
    ```
 
-#### SPAルーティングが動作しない場合
+#### 3. SPAルーティングが動作しない場合
+
 **症状**: React Routerのパスが正常に動作しない
 
 **解決方法**:
@@ -530,6 +536,7 @@ Vercelが「このURLは実際のファイルなのか、それともReactアプ
    ```
 
 ### デバッグ手順
+
 1. **Vercelのデプロイログを確認**
 2. **ブラウザの開発者ツールでエラーを確認**
 3. **ローカル環境で動作確認**
